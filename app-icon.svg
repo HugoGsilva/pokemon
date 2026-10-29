@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="redGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ff3b30"/>
+      <stop offset="100%" stop-color="#d32f2f"/>
+    </linearGradient>
+    <linearGradient id="whiteGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#e0e0e0"/>
+    </linearGradient>
+  </defs>
+  <!-- Background Circle Outer Border -->
+  <circle cx="256" cy="256" r="240" fill="#1c1d24" stroke="#00e676" stroke-width="8"/>
+  <!-- Top Half (Red) -->
+  <path d="M 36 256 A 220 220 0 0 1 476 256 Z" fill="url(#redGrad)" />
+  <!-- Bottom Half (White) -->
+  <path d="M 36 256 A 220 220 0 0 0 476 256 Z" fill="url(#whiteGrad)" />
+  <!-- Center Divider Line -->
+  <rect x="36" y="240" width="440" height="32" fill="#1c1d24" />
+  <!-- Center Outer Ring -->
+  <circle cx="256" cy="256" r="64" fill="#1c1d24" stroke="#00e676" stroke-width="6"/>
+  <!-- Center Inner Button -->
+  <circle cx="256" cy="256" r="34" fill="#ffffff" stroke="#1c1d24" stroke-width="4"/>
+  <circle cx="256" cy="256" r="16" fill="#00e676"/>
+</svg>

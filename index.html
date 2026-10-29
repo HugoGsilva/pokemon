@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PokeGrid Ultra-Light</title>
+    <link rel="stylesheet" href="/src/styles/main.css" />
+  </head>
+  <body>
+    <header id="control-bar">
+      <div class="logo-area">
+        <span class="logo-badge">PokeGrid</span>
+        <span class="version-tag">Ultra-Light v2</span>
+      </div>
+
+      <div class="actions-area">
+        <button id="btn-eco" class="btn btn-toggle" title="Alternar Modo Eco (oculta as contas e libera memória; elas seguem abertas)">
+          <span class="status-dot green"></span>
+          <span>Modo Eco</span>
+        </button>
+
+        <button id="btn-twitch" class="btn btn-toggle" title="Abrir/Recolher Drawer da Twitch (Ghost Mode ativo)">
+          <span class="twitch-icon"></span>
+          <span>Twitch Drops</span>
+          <span id="twitch-status-badge" class="badge-mini">Ghost (160p)</span>
+        </button>
+
+        <button id="btn-reload-all" class="btn btn-secondary" title="Recarregar todas as 4 contas com resiliência">
+          <span>Recarregar Tudo</span>
+        </button>
+
+        <button id="btn-config" class="btn btn-secondary" title="Gerenciar credenciais criptografadas (DPAPI)">
+          <span>Contas</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Visível sob as webviews quando o Modo Eco as oculta -->
+    <main id="eco-placeholder" class="hidden">
+      <p class="eco-title">Modo Eco ativo</p>
+      <p class="eco-desc">As 4 contas continuam abertas em segundo plano, sem renderizar. Desligue o Modo Eco para vê-las.</p>
+    </main>
+
+    <!-- Modal simples de gerenciamento de credenciais -->
+    <div id="accounts-modal" class="modal hidden">
+      <div class="modal-card">
+        <div class="modal-header">
+          <h3>Contas (DPAPI)</h3>
+          <button id="btn-close-modal" class="btn-close">&times;</button>
+        </div>
+        <div class="modal-body">
+          <p class="modal-desc">As credenciais são salvas criptografadas com DPAPI nativo do Windows.</p>
+          <div id="accounts-list">
+            <!-- Gerado via TypeScript -->
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button id="btn-save-accounts" class="btn btn-primary">Salvar Criptografado</button>
+        </div>
+      </div>
+    </div>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
