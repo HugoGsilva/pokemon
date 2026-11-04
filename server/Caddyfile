@@ -1,0 +1,5 @@
+# HTTPS automático (Let's Encrypt) para o domínio de DOMAIN. O DNS do domínio precisa apontar para a VPS
+# e as portas 80/443 precisam estar livres
+{$DOMAIN} {
+	reverse_proxy pokegrid:8080
+}

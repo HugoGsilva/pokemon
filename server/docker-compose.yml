@@ -1,0 +1,50 @@
+# PokeGrid Remoto (ver server/README.md). Na raiz do repositório:
+#   cp server/pokegrid.conf.example server/pokegrid.conf   (e troque a senha)
+#   docker compose -f server/docker-compose.yml up -d --build                    # só o PokeGrid (127.0.0.1:8080)
+#   docker compose -f server/docker-compose.yml --profile caddy up -d --build    # + Caddy com HTTPS no seu domínio
+services:
+  pokegrid:
+    build:
+      context: ..
+      dockerfile: server/Dockerfile
+    image: pokegrid-remoto
+    container_name: pokegrid
+    restart: unless-stopped
+    # Recolhe os processos-zumbi dos Chromium (sem isso o servidor seria o PID 1 do container)
+    init: true
+    env_file: pokegrid.conf
+    volumes:
+      # Perfis das contas (login), histórico do painel e cache do catálogo
+      - pokegrid_data:/data
+    ports:
+      # Só local: quem expõe para a internet é o proxy com HTTPS (o Caddy abaixo, ou o que você já usa)
+      - "127.0.0.1:8080:8080"
+    # Teto de RAM do container inteiro: o resto da VPS nunca fica sem memória por causa do jogo.
+    # O vigia (PG_MEM_TOTAL_MB) age antes; a folga cobre o servidor e picos
+    mem_limit: 5g
+    memswap_limit: 6g
+    logging:
+      driver: json-file
+      options:
+        max-size: "5m"
+        max-file: "2"
+
+  caddy:
+    image: caddy:2-alpine
+    profiles: ["caddy"]
+    restart: unless-stopped
+    env_file: pokegrid.conf
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - pokegrid
+
+volumes:
+  pokegrid_data:
+  caddy_data:
+  caddy_config:

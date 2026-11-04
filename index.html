@@ -5,24 +5,46 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>PokeGrid Ultra-Light</title>
     <link rel="stylesheet" href="/src/styles/main.css" />
+    <link rel="stylesheet" href="/src/styles/farm.css" />
   </head>
   <body>
     <header id="control-bar">
       <div class="logo-area">
         <span class="logo-badge">PokeGrid</span>
         <span class="version-tag">Ultra-Light v2</span>
+        <span id="ram-usage" class="version-tag" title="RAM total do app: barra, 4 contas, lives e Discord (mesma métrica da coluna Memória do Gerenciador de Tarefas)">RAM —</span>
       </div>
 
       <div class="actions-area">
+        <div id="view-switch" class="segmented">
+          <button class="btn active" data-focus="0" title="Grade 2x2 com as 4 contas">Grade</button>
+          <button class="btn" data-focus="1" title="Ampliar a conta 1 (clique de novo para voltar à grade)">1</button>
+          <button class="btn" data-focus="2" title="Ampliar a conta 2 (clique de novo para voltar à grade)">2</button>
+          <button class="btn" data-focus="3" title="Ampliar a conta 3 (clique de novo para voltar à grade)">3</button>
+          <button class="btn" data-focus="4" title="Ampliar a conta 4 (clique de novo para voltar à grade)">4</button>
+        </div>
+
         <button id="btn-eco" class="btn btn-toggle" title="Alternar Modo Eco (oculta as contas e libera memória; elas seguem abertas)">
           <span class="status-dot green"></span>
           <span>Modo Eco</span>
         </button>
 
-        <button id="btn-twitch" class="btn btn-toggle" title="Abrir/Recolher Drawer da Twitch (Ghost Mode ativo)">
+        <button id="btn-twitch" class="btn btn-toggle" title="Mostrar/Recolher a live 1 (as 5 lives seguem em Ghost, 160p e mudas)">
           <span class="twitch-icon"></span>
-          <span>Twitch Drops</span>
-          <span id="twitch-status-badge" class="badge-mini">Ghost (160p)</span>
+          <span>Twitch</span>
+          <span id="twitch-status-badge" class="badge-mini">5 lives · Ghost</span>
+        </button>
+
+        <button id="btn-channels" class="btn btn-secondary" title="Canais oficiais assistidos para o bônus de live (em ordem de prioridade)">
+          <span>Canais</span>
+        </button>
+
+        <button id="btn-discord" class="btn btn-toggle" title="Mostrar/Recolher o Discord (a call continua com ele recolhido)">
+          <span>Discord</span>
+        </button>
+
+        <button id="btn-tools" class="btn btn-secondary" title="Qualidade/IV, Tierlist e Onde caçar, numa janela separada (não mexe nas contas)">
+          <span>Ferramentas</span>
         </button>
 
         <button id="btn-reload-all" class="btn btn-secondary" title="Recarregar todas as 4 contas com resiliência">
@@ -35,11 +57,8 @@
       </div>
     </header>
 
-    <!-- Visível sob as webviews quando o Modo Eco as oculta -->
-    <main id="eco-placeholder" class="hidden">
-      <p class="eco-title">Modo Eco ativo</p>
-      <p class="eco-desc">As 4 contas continuam abertas em segundo plano, sem renderizar. Desligue o Modo Eco para vê-las.</p>
-    </main>
+    <!-- Painel do Modo Eco: visível sob as webviews quando o Modo Eco as oculta (src/farm.ts, conteúdo em src/farm-panel.html) -->
+    <main id="farm-panel" class="hidden"></main>
 
     <!-- Modal simples de gerenciamento de credenciais -->
     <div id="accounts-modal" class="modal hidden">
@@ -56,6 +75,23 @@
         </div>
         <div class="modal-footer">
           <button id="btn-save-accounts" class="btn btn-primary">Salvar Criptografado</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Lista de canais oficiais para o bônus de live -->
+    <div id="channels-modal" class="modal hidden">
+      <div class="modal-card">
+        <div class="modal-header">
+          <h3>Canais oficiais (bônus de live)</h3>
+          <button id="btn-close-channels" class="btn-close">&times;</button>
+        </div>
+        <div class="modal-body">
+          <p class="modal-desc">Um canal por linha, em ordem de prioridade. As 5 lives entram sozinhas nos primeiros canais da lista que estiverem ao vivo (com o chat aberto, logado). Só contam canais com o selo ⚡ BONUS ON no jogo.</p>
+          <textarea id="channels-input" class="channels-input" rows="12" spellcheck="false"></textarea>
+        </div>
+        <div class="modal-footer">
+          <button id="btn-save-channels" class="btn btn-primary">Salvar</button>
         </div>
       </div>
     </div>

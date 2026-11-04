@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PokeGrid · Ferramentas</title>
+    <link rel="stylesheet" href="/src/styles/tools.css" />
+  </head>
+  <body>
+    <header class="tools-bar">
+      <nav class="tabs" role="tablist">
+        <button class="tab active" data-tab="iv" role="tab">Qualidade / IV</button>
+        <button class="tab" data-tab="tier" role="tab">Tierlist</button>
+        <button class="tab" data-tab="hunt" role="tab">Onde caçar</button>
+      </nav>
+      <div class="data-status">
+        <span id="data-info">Carregando dados do jogo…</span>
+        <button id="btn-refresh" class="btn btn-small" title="Baixar de novo creatures.json, items.json e o mapa de hunts do site do jogo">Atualizar dados</button>
+      </div>
+    </header>
+
+    <p id="data-warning" class="warning hidden"></p>
+
+    <!-- Qualidade / IV -->
+    <section id="tab-iv" class="tab-panel">
+      <div class="iv-layout">
+        <form id="iv-form" class="card form-card" autocomplete="off">
+          <label class="field wide">
+            <span>Espécie</span>
+            <input id="iv-species" list="species-list" placeholder="Digite o nome (ex.: Gyarados)" />
+          </label>
+          <div class="field-row">
+            <label class="field"><span>Nível</span><input id="iv-level" type="number" min="1" max="3000" /></label>
+            <label class="field"><span>Qualidade</span><input id="iv-quality" type="text" inputmode="decimal" placeholder="1.53" /></label>
+          </div>
+          <div class="field-row">
+            <label class="field"><span>IV total <em>(opcional)</em></span><input id="iv-total" type="number" min="6" max="192" /></label>
+            <label class="field"><span>Poder <em>(opcional)</em></span><input id="iv-power" type="number" min="1" /></label>
+          </div>
+          <p class="hint">Atributos que o jogo mostra:</p>
+          <div class="stats-grid">
+            <label class="field"><span>HP</span><input data-stat="0" type="number" min="1" /></label>
+            <label class="field"><span>Atk</span><input data-stat="1" type="number" min="1" /></label>
+            <label class="field"><span>Def</span><input data-stat="2" type="number" min="1" /></label>
+            <label class="field"><span>Sp. Atk</span><input data-stat="3" type="number" min="1" /></label>
+            <label class="field"><span>Sp. Def</span><input data-stat="4" type="number" min="1" /></label>
+            <label class="field"><span>Speed</span><input data-stat="5" type="number" min="1" /></label>
+          </div>
+          <label class="field"><span>Projetar no nível</span><input id="iv-target" type="number" min="1" max="3000" placeholder="ex.: 500" /></label>
+          <div class="form-actions">
+            <button type="button" id="btn-pin" class="btn" title="Guardar este pokémon para comparar (até 3)">📌 Fixar</button>
+            <button type="button" id="btn-hunt-with" class="btn" title="Ver as melhores hunts para este pokémon">Onde caçar com ele →</button>
+            <button type="button" id="btn-iv-clear" class="btn btn-ghost">Limpar</button>
+          </div>
+        </form>
+
+        <div id="iv-result" class="iv-result">
+          <div class="card empty-state">Escolha a espécie e preencha nível, qualidade e os atributos que o jogo mostra. Os IVs saem pela fórmula do jogo.</div>
+        </div>
+      </div>
+
+      <div id="compare" class="card hidden">
+        <div class="card-title">
+          <h3>Comparar</h3>
+          <span class="hint">Fixados ficam salvos. Verde: o fixado tem mais que o atual; vermelho: menos.</span>
+        </div>
+        <div class="table-wrap"><table id="compare-table" class="table"></table></div>
+      </div>
+    </section>
+
+    <!-- Tierlist -->
+    <section id="tab-tier" class="tab-panel hidden">
+      <div class="card controls">
+        <label class="field inline"><span>Seu nível</span><input id="tier-level" type="number" min="0" max="3000" value="100" title="Só hunts e espécies que esse nível alcança (0 = todas)" /></label>
+        <div class="segmented" id="tier-goal">
+          <button class="btn active" data-goal="xp">XP/h</button>
+          <button class="btn" data-goal="gold">Gold/h</button>
+        </div>
+        <label class="check"><input id="tier-tm" type="checkbox" /> com TM</label>
+        <input id="tier-search" class="search" type="search" placeholder="Filtrar espécie" />
+      </div>
+      <div class="chips" id="tier-types"></div>
+      <p class="hint model-note">Nota de 0 a 100 (100 = o melhor da aba). Cada espécie é avaliada com qualidade 1 e IV mediano no nível de cada hunt que você alcança, pelo melhor golpe aprendido, com as regras de dano do jogo. É uma estimativa: o modelo não mede o seu farm.</p>
+      <div id="tier-list" class="rows"></div>
+    </section>
+
+    <!-- Onde caçar -->
+    <section id="tab-hunt" class="tab-panel hidden">
+      <div class="card controls">
+        <div class="segmented" id="hunt-mode">
+          <button class="btn active" data-mode="type">Por elemento</button>
+          <button class="btn" data-mode="poke">Meu pokémon</button>
+        </div>
+        <div class="segmented" id="hunt-goal">
+          <button class="btn active" data-goal="xp">XP/h</button>
+          <button class="btn" data-goal="gold">Gold/h</button>
+        </div>
+        <label class="check"><input id="hunt-tm" type="checkbox" /> com TM</label>
+      </div>
+
+      <div id="hunt-type-controls" class="card controls">
+        <label class="field inline"><span>Seu nível</span><input id="hunt-level" type="number" min="1" max="3000" value="100" /></label>
+        <span class="hint">Elemento do selvagem (use o Tipo do Dia do jogo):</span>
+      </div>
+      <div class="chips" id="hunt-types"></div>
+
+      <div id="hunt-poke-controls" class="card controls hidden">
+        <label class="field inline grow"><span>Espécie</span><input id="hp-species" list="species-list" placeholder="Nome" /></label>
+        <label class="field inline"><span>Nível</span><input id="hp-level" type="number" min="1" max="3000" value="100" /></label>
+        <label class="field inline"><span>Qualidade</span><input id="hp-quality" type="text" inputmode="decimal" value="1" /></label>
+        <label class="field inline"><span>IV total</span><input id="hp-iv" type="number" min="6" max="192" value="96" /></label>
+        <label class="field inline"><span>Nível da conta</span><input id="hp-account" type="number" min="0" max="3000" value="0" title="Só hunts que a conta alcança (0 = todas)" /></label>
+      </div>
+
+      <div id="hunt-list" class="rows"></div>
+    </section>
+
+    <datalist id="species-list"></datalist>
+    <script type="module" src="/src/tools/main.ts"></script>
+  </body>
+</html>

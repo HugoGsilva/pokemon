@@ -21,10 +21,22 @@
         "resizable": true,
         "fullscreen": false,
         "additionalBrowserArgs": "--disable-sync --disable-extensions --disable-component-update --disable-background-networking --disable-features=Translate,OptimizationHints,MediaRouter,SpareRendererForSitePerProcess,msWebOOUI,msPdfOOUI,msSmartScreenProtection --disk-cache-size=33554432 --media-cache-size=16777216 --disable-background-timer-throttling --disable-backgrounding-occluded-windows --disable-renderer-backgrounding"
+      },
+      {
+        "label": "tools",
+        "create": false,
+        "url": "tools.html",
+        "title": "PokeGrid · Ferramentas",
+        "width": 1040,
+        "height": 820,
+        "minWidth": 720,
+        "minHeight": 520,
+        "resizable": true,
+        "additionalBrowserArgs": "--disable-sync --disable-extensions --disable-component-update --disable-background-networking --disable-features=Translate,OptimizationHints,MediaRouter,SpareRendererForSitePerProcess,msWebOOUI,msPdfOOUI,msSmartScreenProtection --disk-cache-size=33554432 --media-cache-size=16777216 --disable-background-timer-throttling --disable-backgrounding-occluded-windows --disable-renderer-backgrounding"
       }
     ],
     "security": {
-      "csp": "default-src 'self'; connect-src 'self' ipc: http://ipc.localhost",
+      "csp": "default-src 'self'; connect-src 'self' ipc: http://ipc.localhost; img-src 'self' https://raw.githubusercontent.com",
       "devCsp": null
     }
   },

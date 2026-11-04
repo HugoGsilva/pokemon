@@ -98,6 +98,38 @@ body {
   transform: translateY(1px);
 }
 
+.btn.active {
+  background: var(--bg-card);
+  border-color: var(--accent-blue);
+}
+
+/* Seletor Grade | 1 | 2 | 3 | 4 */
+.segmented {
+  display: inline-flex;
+  margin-right: 6px;
+}
+
+.segmented .btn {
+  border-radius: 0;
+  margin-left: -1px;
+  padding: 5px 9px;
+}
+
+.segmented .btn:first-child {
+  border-radius: 5px 0 0 5px;
+  margin-left: 0;
+}
+
+.segmented .btn:last-child {
+  border-radius: 0 5px 5px 0;
+}
+
+/* Borda azul do ativo por cima da borda do vizinho */
+.segmented .btn.active {
+  position: relative;
+  z-index: 1;
+}
+
 .status-dot {
   width: 8px;
   height: 8px;
@@ -139,35 +171,6 @@ body {
 
 .btn-close:hover {
   color: #fff;
-}
-
-#eco-placeholder {
-  position: fixed;
-  inset: var(--header-height) 0 0 0;
-  background: var(--bg-primary);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  text-align: center;
-  padding: 0 24px;
-}
-
-#eco-placeholder.hidden {
-  display: none;
-}
-
-.eco-title {
-  font-size: 16px;
-  font-weight: 600;
-  color: var(--accent-green);
-}
-
-.eco-desc {
-  font-size: 12px;
-  color: var(--text-muted);
-  max-width: 420px;
 }
 
 /* Modal */
@@ -224,6 +227,24 @@ body {
 }
 
 .account-row input:focus {
+  outline: none;
+  border-color: var(--accent-blue);
+}
+
+.channels-input {
+  width: 100%;
+  resize: vertical;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  color: #fff;
+  padding: 8px;
+  font-family: Consolas, "Courier New", monospace;
+  font-size: 12px;
+  border-radius: 4px;
+  user-select: text;
+}
+
+.channels-input:focus {
   outline: none;
   border-color: var(--accent-blue);
 }

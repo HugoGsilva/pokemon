@@ -1,0 +1,78 @@
+<!-- Conteúdo do painel do Modo Eco, usado pelo app (index.html) e pela página remota (remote.html) -->
+<section class="fp-card">
+  <header class="fp-head">
+    <span class="fp-title">Hoje · <span id="fp-date">—</span></span>
+    <div class="fp-tools">
+      <label class="fp-field">Meta gold/dia <input id="fp-goal-gold" class="fp-input" placeholder="ex.: 10M" spellcheck="false" /></label>
+      <label class="fp-field">Meta capturas/dia <input id="fp-goal-caps" class="fp-input fp-input-s" placeholder="ex.: 100" spellcheck="false" /></label>
+      <button id="fp-export-days" class="btn" title="Planilha com um dia por linha (últimos 90 dias), baixada para Downloads">⭳ Dia</button>
+      <button id="fp-export-hunts" class="btn" title="Planilha com cada hunt encerrada (kills, XP, gold, drops), baixada para Downloads"><span>⭳ Hunts (<span id="fp-hunts-n">0</span>)</span></button>
+    </div>
+  </header>
+  <div id="fp-stats" class="fp-stats"></div>
+  <p id="fp-periods" class="fp-periods"></p>
+</section>
+
+<section class="fp-card">
+  <header class="fp-head">
+    <span class="fp-title">Por conta · clique no cabeçalho pra ordenar, na linha pra abrir o jogo</span>
+    <div class="fp-tools">
+      <label class="fp-field">Melhor catch
+        <select id="fp-best-mode" class="fp-input">
+          <option value="ivq">IV × qual.</option>
+          <option value="iv">IV</option>
+          <option value="q">Qualidade</option>
+        </select>
+      </label>
+      <button id="fp-reset" class="btn" title="Começa uma sessão nova em todas as contas (o dia e as listas continuam)">⟲ Zerar</button>
+    </div>
+  </header>
+  <div class="fp-table-wrap">
+    <table class="fp-table">
+      <thead><tr id="fp-thead-row"></tr></thead>
+      <tbody id="fp-tbody"></tbody>
+      <tfoot id="fp-tfoot"></tfoot>
+    </table>
+  </div>
+</section>
+
+<div class="fp-grid">
+  <section class="fp-card">
+    <header class="fp-head"><span class="fp-title">Últimas capturas · todas as contas</span></header>
+    <div class="fp-filters">
+      <select id="fp-f-account" class="fp-input" title="Conta"></select>
+      <input id="fp-f-search" class="fp-input fp-grow" placeholder="Buscar pokémon" spellcheck="false" />
+      <select id="fp-f-period" class="fp-input" title="Período">
+        <option value="1h">1h</option>
+        <option value="24h">24h</option>
+        <option value="7d">7 dias</option>
+        <option value="all">tudo</option>
+      </select>
+      <input id="fp-f-iv" class="fp-input fp-input-s" placeholder="IV≥" title="IV total mínimo (de 192)" inputmode="numeric" />
+      <input id="fp-f-q" class="fp-input fp-input-s" placeholder="×≥" title="Qualidade mínima" inputmode="decimal" />
+      <label class="fp-check" title="Só shiny"><input id="fp-f-shiny" type="checkbox" /> ✨</label>
+    </div>
+    <div id="fp-catches" class="fp-list"></div>
+  </section>
+
+  <section class="fp-card">
+    <header class="fp-head">
+      <span class="fp-title">Aparições de shiny ✨</span>
+      <span class="fp-muted fp-small">contadores: sessão · lista: histórico</span>
+    </header>
+    <div id="fp-shiny-counts" class="fp-counts"></div>
+    <div id="fp-shinies" class="fp-list"></div>
+  </section>
+
+  <section class="fp-card">
+    <header class="fp-head">
+      <span class="fp-title">Drops · hoje</span>
+      <select id="fp-d-account" class="fp-input" title="Conta"></select>
+    </header>
+    <div id="fp-drops-total" class="fp-counts fp-muted"></div>
+    <div id="fp-drops" class="fp-list"></div>
+  </section>
+</div>
+
+<p class="fp-note">Leitura passiva: o PokeGrid recebe uma cópia das mensagens que o servidor do jogo já manda para cada conta (protocolo DevTools do navegador). Nada é injetado nas páginas nem enviado ao jogo. Gold é estimado pelo loot a preço de NPC + venda das capturas − pokébolas.</p>
+<div id="fp-toast" class="fp-toast hidden"></div>

@@ -12,6 +12,14 @@ export default defineConfig({
   },
   envPrefix: ["VITE_", "TAURI_ENV_*"],
   build: {
+    // Barra de controle (main), janela Ferramentas (tools) e página do servidor remoto (remote, ver server/)
+    rollupOptions: {
+      input: {
+        main: "index.html",
+        tools: "tools.html",
+        remote: "remote.html",
+      },
+    },
     target: "esnext",
     minify: !process.env.TAURI_ENV_DEBUG ? "esbuild" : false,
     sourcemap: !!process.env.TAURI_ENV_DEBUG,

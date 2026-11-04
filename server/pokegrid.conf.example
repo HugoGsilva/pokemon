@@ -1,0 +1,21 @@
+# Copie para server/pokegrid.conf (fica fora do git) e troque a senha.
+
+# Login da página (usuário/senha que o navegador pede). Mínimo de 12 caracteres
+PG_USER=pokegrid
+PG_PASSWORD=troque-esta-senha-por-uma-longa
+
+# Nomes das contas na página e no painel, separados por vírgula
+PG_NAMES=Conta 1,Conta 2,Conta 3,Conta 4
+
+# Domínio para o Caddy (só com --profile caddy)
+DOMAIN=pokegrid.seudominio.com.br
+
+# ---- Opcionais (valores padrão) ----
+# PG_ACCOUNTS=4
+# PG_VIEWPORT=1280x720
+# PG_FPS=2
+# PG_FPS_FOCUS=5
+# PG_JPEG_QUALITY=50
+# PG_MEM_ACCOUNT_MB=900
+# PG_MEM_TOTAL_MB=4300
+# PG_JS_HEAP_MB=768

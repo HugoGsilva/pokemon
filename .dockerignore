@@ -1,0 +1,9 @@
+# Contexto do build da imagem do servidor remoto (server/Dockerfile): só o que ela usa
+node_modules
+dist
+src-tauri/target
+src-tauri/gen
+server/target
+server/pokegrid.conf
+.git
+*.enc

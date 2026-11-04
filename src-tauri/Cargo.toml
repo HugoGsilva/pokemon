@@ -16,12 +16,19 @@ tauri-build = { version = "2", features = [] }
 tauri = { version = "2", features = ["unstable"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+# Download dos dados públicos do jogo para a janela Ferramentas (TLS nativo do Windows, sem rustls)
+ureq = { version = "2", default-features = false, features = ["native-tls"] }
+native-tls = "0.2"
 
 [target.'cfg(windows)'.dependencies]
 windows = { version = "0.58", features = [
     "Win32_Security_Cryptography",
     "Win32_Foundation",
-    "Win32_System_Memory"
+    "Win32_System_Memory",
+    # RAM total do app (processo principal + árvores do WebView2)
+    "Win32_System_Diagnostics_ToolHelp",
+    "Win32_System_ProcessStatus",
+    "Win32_System_Threading"
 ] }
 # Mesmas versões usadas internamente pelo wry (acesso ao ICoreWebView2 para o modo de memória baixa)
 webview2-com = "0.39"

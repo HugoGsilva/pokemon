@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#12141a" />
+    <title>PokeGrid Remoto</title>
+    <link rel="stylesheet" href="/src/styles/main.css" />
+    <link rel="stylesheet" href="/src/styles/farm.css" />
+    <link rel="stylesheet" href="/src/styles/remote.css" />
+  </head>
+  <body>
+    <header id="control-bar">
+      <div class="logo-area">
+        <span class="logo-badge">PokeGrid</span>
+        <span class="version-tag">Remoto</span>
+        <span id="rm-ram" class="version-tag" title="RAM das contas na VPS (Chromium de cada uma) / teto do vigia de memória">RAM —</span>
+        <span id="rm-link" class="version-tag rm-off" title="Conexão de vídeo com a VPS">offline</span>
+      </div>
+
+      <div class="actions-area">
+        <div id="view-switch" class="segmented">
+          <button class="btn active" data-focus="0" title="Grade com todas as contas">Grade</button>
+          <button class="btn" data-focus="1" title="Ampliar a conta 1">1</button>
+          <button class="btn" data-focus="2" title="Ampliar a conta 2">2</button>
+          <button class="btn" data-focus="3" title="Ampliar a conta 3">3</button>
+          <button class="btn" data-focus="4" title="Ampliar a conta 4">4</button>
+        </div>
+
+        <button id="btn-panel" class="btn btn-toggle" title="Painel do Modo Eco (com ele aberto as telas não transmitem: zero banda)">
+          <span class="status-dot green"></span>
+          <span>Painel</span>
+        </button>
+
+        <button id="btn-kbd" class="btn btn-secondary" title="Abrir o teclado do celular para digitar na conta selecionada">
+          <span>⌨</span>
+        </button>
+
+        <button id="btn-reload" class="btn btn-secondary" title="Recarregar a conta selecionada (F5 na VPS)">
+          <span>Recarregar</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Telas das contas (src/remote/main.ts): JPEG do screencast do Chromium da VPS -->
+    <main id="screens" class="rm-grid"></main>
+
+    <main id="farm-panel" class="hidden"></main>
+
+    <!-- Recebe o teclado do celular (o vídeo não tem campo de texto para o sistema abrir o teclado) -->
+    <textarea id="kbd-sink" class="rm-kbd" autocapitalize="off" autocomplete="off" spellcheck="false" aria-label="Teclado"></textarea>
+
+    <script type="module" src="/src/remote/main.ts"></script>
+  </body>
+</html>

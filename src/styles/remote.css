@@ -1,0 +1,148 @@
+/* Página remota (remote.html): telas das contas da VPS em grade ou ampliadas */
+body {
+  background: var(--bg-primary);
+  height: 100dvh;
+}
+
+.hidden {
+  display: none !important;
+}
+
+.rm-off {
+  color: var(--accent-red);
+}
+
+.rm-warn {
+  color: var(--fp-warn-tx);
+  border-color: rgba(210, 153, 34, 0.5);
+}
+
+.rm-grid {
+  position: fixed;
+  inset: var(--header-height) 0 0 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-auto-rows: minmax(0, 1fr);
+  gap: 4px;
+  padding: 4px;
+  background: #0b0d12;
+}
+
+.rm-grid[data-count="1"],
+.rm-grid.rm-focus {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.rm-tile {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  background: #000;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.rm-tile.selected {
+  border-color: var(--accent-blue);
+}
+
+.rm-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  touch-action: none;
+  cursor: default;
+}
+
+.rm-msg {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  font-size: 13px;
+  pointer-events: none;
+}
+
+.rm-bar {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  max-width: calc(100% - 8px);
+  padding: 3px 6px;
+  background: rgba(18, 20, 26, 0.78);
+  border-radius: 5px;
+  font-size: 11.5px;
+  opacity: 0.85;
+}
+
+.rm-tile:hover .rm-bar {
+  opacity: 1;
+}
+
+.rm-name {
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rm-zoom {
+  background: none;
+  border: none;
+  color: var(--text-main);
+  cursor: pointer;
+  font-size: 13px;
+  line-height: 1;
+  padding: 0 2px;
+}
+
+/* Fora da tela, mas focável: é o que faz o celular abrir o teclado */
+.rm-kbd {
+  position: fixed;
+  left: 0;
+  bottom: 0;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  font-size: 16px;
+  border: none;
+  resize: none;
+}
+
+/* Celular em pé: uma conta por linha, com a barra de botões rolando de lado */
+@media (max-width: 760px) {
+  #control-bar {
+    gap: 8px;
+    padding: 0 8px;
+  }
+
+  .actions-area {
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .version-tag:not(#rm-ram) {
+    display: none;
+  }
+
+  .rm-grid {
+    grid-template-columns: minmax(0, 1fr);
+    grid-auto-rows: auto;
+    overflow-y: auto;
+  }
+
+  .rm-grid:not(.rm-focus) .rm-tile {
+    aspect-ratio: var(--rm-ratio, 16 / 9);
+  }
+
+  .rm-grid:not(.rm-focus) .rm-canvas {
+    touch-action: pan-y;
+  }
+}

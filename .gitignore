@@ -6,3 +6,5 @@ src-tauri/gen
 *.tmp
 .DS_Store
 Thumbs.db
+server/target
+server/pokegrid.conf
