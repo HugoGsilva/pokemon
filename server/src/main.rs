@@ -39,6 +39,7 @@ async fn main() {
     #[cfg(windows)]
     close_children_with_server();
 
+    chrome::prepare_display(&cfg);
     let stats = stats::Stats::load(&cfg.data_dir, &cfg.game_url);
     stats.spawn_background();
     let video = account::Video::new();

@@ -1,17 +1,18 @@
 # PokeGrid Remoto (VPS)
 
-As 4 contas rodam 24/7 num Chromium headless. Pelo seu domínio você vê a tela de cada uma, clica e digita
+As 4 contas rodam 24/7 num Chrome. Pelo seu domínio você vê a tela de cada uma, clica e digita
 nelas (mouse, toque e teclado), e tem o painel do Modo Eco. Dá para rodar de dois jeitos:
 
-- **Na VPS** (abaixo): o PC pode ficar desligado. Só funciona se o site do jogo aceitar o IP da VPS. O Cloudflare
-  do idleworld.online bloqueia o IP da nossa VPS ("Sorry, you have been blocked"), então hoje usamos o outro jeito.
+- **Na VPS** (abaixo): o PC pode ficar desligado. A imagem sobe o Google Chrome numa tela virtual. O
+  `chromium-headless-shell` do Debian é classificado como cliente automático e o Cloudflare do jogo responde
+  "Sorry, you have been blocked". Se essa página continuar com o Chrome normal, aí o IP da VPS em si foi recusado.
 - **No PC, com túnel pela VPS** ([Rodar no PC](#rodar-no-pc-túnel-pela-vps)): as contas rodam no seu PC, com o
   IP de casa, e a VPS só leva o domínio até ele.
 
 ```
 VPS (Docker)
 ├─ pokegrid-server (Rust)
-│   ├─ 1 Chromium headless por conta (perfil próprio em /data/contaN: o login sobrevive a reinícios)
+│   ├─ 1 Chrome por conta, numa tela virtual (perfil próprio em /data/contaN: o login sobrevive a reinícios)
 │   ├─ tela:   Page.startScreencast → JPEG só quando a tela muda, só para quem está olhando
 │   ├─ input:  Input.dispatchMouseEvent / dispatchKeyEvent / insertText
 │   ├─ painel: leitura passiva do WebSocket do jogo (mesma contabilidade do app, src-tauri/src/domain/farm.rs)

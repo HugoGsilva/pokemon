@@ -1,5 +1,5 @@
-//! Um Chromium headless por conta, cada um com o seu perfil em disco (login e cookies sobrevivem a reinícios).
-//! Na VPS é o chromium-headless-shell do Debian; no PC (Windows), o Chrome ou o Edge instalados.
+//! Um Chromium por conta, cada um com o seu perfil em disco (login e cookies sobrevivem a reinícios).
+//! Na VPS é o Google Chrome numa tela virtual (`PG_HEADED=1`). No PC, o Chrome ou o Edge em headless.
 //! Processos separados custam ~0,1 GB a mais que abas num navegador só, mas dão a RAM exata de cada conta
 //! (o vigia de memória precisa disso) e uma conta que trava não derruba as outras.
 use crate::config::Config;
@@ -10,8 +10,13 @@ use tokio::io::{AsyncBufReadExt, BufReader};
 use tokio::process::{Child, Command};
 
 /// Binários procurados quando `PG_CHROME` não está definido (o primeiro é o do Debian, usado no Docker)
-const CANDIDATES: [&str; 5] =
-    ["chromium-headless-shell", "chrome-headless-shell", "chromium", "google-chrome", "msedge"];
+const CANDIDATES: [&str; 5] = [
+    "chromium-headless-shell",
+    "chrome-headless-shell",
+    "chromium",
+    "google-chrome",
+    "msedge",
+];
 
 pub struct Chrome {
     pub child: Child,
@@ -27,7 +32,10 @@ fn find_binary(cfg: &Config) -> String {
     if let Some(bin) = &cfg.chrome {
         return bin.clone();
     }
-    for fixed in ["/usr/lib/chromium/chromium-headless-shell", "/usr/lib/chromium/headless_shell"] {
+    for fixed in [
+        "/usr/lib/chromium/chromium-headless-shell",
+        "/usr/lib/chromium/headless_shell",
+    ] {
         if Path::new(fixed).is_file() {
             return fixed.to_string();
         }
@@ -38,11 +46,17 @@ fn find_binary(cfg: &Config) -> String {
             ("ProgramFiles", r"Google\Chrome\Application\chrome.exe"),
             ("ProgramFiles(x86)", r"Google\Chrome\Application\chrome.exe"),
             ("LOCALAPPDATA", r"Google\Chrome\Application\chrome.exe"),
-            ("ProgramFiles(x86)", r"Microsoft\Edge\Application\msedge.exe"),
+            (
+                "ProgramFiles(x86)",
+                r"Microsoft\Edge\Application\msedge.exe",
+            ),
             ("ProgramFiles", r"Microsoft\Edge\Application\msedge.exe"),
         ];
         for (base, rel) in installs {
-            if let Some(path) = std::env::var_os(base).map(|b| PathBuf::from(b).join(rel)).filter(|p| p.is_file()) {
+            if let Some(path) = std::env::var_os(base)
+                .map(|b| PathBuf::from(b).join(rel))
+                .filter(|p| p.is_file())
+            {
                 return path.display().to_string();
             }
         }
@@ -58,10 +72,39 @@ fn find_binary(cfg: &Config) -> String {
     CANDIDATES[0].to_string()
 }
 
+/// Na VPS (`PG_HEADED=1`) sobe um Xvfb uma vez, antes das contas. O Chrome abre janela de verdade ali.
+pub fn prepare_display(cfg: &Config) {
+    if std::env::var("PG_HEADED").ok().as_deref() != Some("1") {
+        return;
+    }
+    std::env::set_var("DISPLAY", ":99");
+    let screen = format!("{}x{}x24", cfg.width.max(1280), cfg.height.max(720));
+    match std::process::Command::new("Xvfb")
+        .args([":99", "-screen", "0", &screen, "-nolisten", "tcp", "-ac"])
+        .stdin(Stdio::null())
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .spawn()
+    {
+        Ok(child) => {
+            // Vive o mesmo tempo que o servidor. Largar o handle aqui zumbificaria o Xvfb.
+            Box::leak(Box::new(child));
+            std::thread::sleep(Duration::from_millis(300));
+            eprintln!("[chrome] tela virtual :99 ({screen})");
+        }
+        Err(err) => eprintln!("[chrome] Xvfb não iniciou: {err}"),
+    }
+}
+
 /// Travas que o Chromium deixa quando é morto: com outro hostname (o container muda a cada recriação) ele se
 /// recusa a abrir o perfil, achando que outro computador está usando
 fn clear_locks(dir: &Path) {
-    for name in ["SingletonLock", "SingletonCookie", "SingletonSocket", "DevToolsActivePort"] {
+    for name in [
+        "SingletonLock",
+        "SingletonCookie",
+        "SingletonSocket",
+        "DevToolsActivePort",
+    ] {
         let _ = std::fs::remove_file(dir.join(name));
     }
 }
@@ -72,14 +115,41 @@ pub async fn launch(cfg: &Config, slot: u8) -> Result<Chrome, String> {
     clear_locks(&dir);
 
     let bin = find_binary(cfg);
+    let headed = std::env::var("PG_HEADED").ok().as_deref() == Some("1");
     let mut cmd = Command::new(&bin);
     cmd.arg(format!("--user-data-dir={}", dir.display()))
         .arg("--remote-debugging-address=127.0.0.1")
         .arg("--remote-debugging-port=0")
         .arg(format!("--window-size={},{}", cfg.width, cfg.height))
-        .arg(format!("--js-flags=--max-old-space-size={}", cfg.js_heap_mb))
-        .args([
-            "--headless",
+        .arg(format!(
+            "--js-flags=--max-old-space-size={}",
+            cfg.js_heap_mb
+        ));
+    if headed {
+        // Janela de verdade no Xvfb. Sem isto o Chrome novo tenta Wayland e não acha tela.
+        cmd.arg("--ozone-platform=x11");
+        cmd.env(
+            "DISPLAY",
+            std::env::var("DISPLAY").unwrap_or_else(|_| ":99".into()),
+        );
+    } else {
+        // O shell do Debian só tem o headless antigo. No Chrome/Edge, o headless novo é o mesmo motor da janela.
+        let shell = bin.contains("headless-shell") || bin.contains("headless_shell");
+        cmd.arg(if shell {
+            "--headless"
+        } else {
+            "--headless=new"
+        });
+    }
+    // O sandbox do Chromium precisa de privilégios que o container não tem; o isolamento fica com o Docker
+    // (usuário sem root, só o site do jogo é aberto)
+    if std::env::var("PG_NO_SANDBOX")
+        .map(|v| v != "0")
+        .unwrap_or(cfg!(target_os = "linux"))
+    {
+        cmd.arg("--no-sandbox");
+    }
+    cmd.args([
             "--no-first-run",
             "--no-default-browser-check",
             // Sem placa de vídeo na VPS: tudo em software, sem o processo de GPU segurando texturas
@@ -109,13 +179,10 @@ pub async fn launch(cfg: &Config, slot: u8) -> Result<Chrome, String> {
         .stdout(Stdio::null())
         .stderr(Stdio::piped())
         .kill_on_drop(true);
-    // O sandbox do Chromium precisa de privilégios que o container não tem; o isolamento fica com o Docker
-    // (usuário sem root, só o site do jogo é aberto)
-    if std::env::var("PG_NO_SANDBOX").map(|v| v != "0").unwrap_or(cfg!(target_os = "linux")) {
-        cmd.arg("--no-sandbox");
-    }
 
-    let mut child = cmd.spawn().map_err(|e| format!("Não foi possível iniciar {}: {}", bin, e))?;
+    let mut child = cmd
+        .spawn()
+        .map_err(|e| format!("Não foi possível iniciar {}: {}", bin, e))?;
     let pid = child.id().unwrap_or(0);
 
     // Porta 0: o Chromium escolhe uma livre e avisa no stderr ("DevTools listening on ws://...") e no arquivo
@@ -165,5 +232,6 @@ fn active_port_url(dir: &Path) -> Option<String> {
     let mut lines = text.lines();
     let port: u16 = lines.next()?.trim().parse().ok()?;
     let path = lines.next()?.trim();
-    path.starts_with('/').then(|| format!("ws://127.0.0.1:{}{}", port, path))
+    path.starts_with('/')
+        .then(|| format!("ws://127.0.0.1:{}{}", port, path))
 }
