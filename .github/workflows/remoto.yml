@@ -1,5 +1,6 @@
 # PokeGrid Remoto: testa o servidor no Linux (imagem da VPS) e no Windows (contas no PC), monta o pacote do PC
-# e publica em Releases (remoto-pc). Com "e2e" (rodar à mão), testa também pelo túnel da VPS.
+# e publica em Releases (remoto-pc). Com "e2e" (rodar à mão) ou "[e2e]" na mensagem do commit, testa também
+# pelo túnel da VPS (só com o PC desconectado do túnel: a porta lá é uma só).
 name: PokeGrid Remoto
 
 on:
@@ -100,7 +101,7 @@ jobs:
           }
 
       - name: Teste pelo túnel da VPS
-        if: ${{ inputs.e2e }}
+        if: ${{ inputs.e2e || contains(github.event.head_commit.message, '[e2e]') }}
         shell: pwsh
         env:
           PG_TUNNEL_AUTH: ${{ secrets.TUNNEL_AUTH }}
