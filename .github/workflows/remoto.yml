@@ -77,7 +77,9 @@ jobs:
           New-Item -ItemType Directory -Force $out | Out-Null
           Copy-Item server/target/release/pokegrid-server.exe $out/
           Copy-Item -Recurse dist $out/web
-          Copy-Item server/windows/iniciar.bat, server/windows/pokegrid.conf.example $out/
+          Copy-Item server/windows/iniciar.bat, server/windows/pokegrid.ps1, server/windows/pokegrid.conf.example $out/
+          # Versão do pacote: o pokegrid.ps1 compara com a do Release para se atualizar
+          Set-Content $out/versao.txt $env:GITHUB_SHA -Encoding Ascii
           Invoke-WebRequest "https://github.com/jpillora/chisel/releases/download/v$env:CHISEL_VERSION/chisel_$($env:CHISEL_VERSION)_windows_amd64.zip" -OutFile chisel.zip
           Expand-Archive chisel.zip -DestinationPath chisel-zip -Force
           Get-ChildItem chisel-zip -Recurse -Filter chisel*.exe | Select-Object -First 1 | Copy-Item -Destination "$out/chisel.exe"

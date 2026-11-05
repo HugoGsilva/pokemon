@@ -96,7 +96,13 @@ Chromium na própria VPS, fica parado enquanto o IP estiver bloqueado.
    e faça o login de cada conta uma vez. Os perfis ficam em `dados\`.
 
 O servidor usa o Chrome instalado, ou o Edge se não houver Chrome, em modo headless e sem placa de vídeo. Fechar a
-janela do `iniciar.bat` desliga as contas e o túnel. No Windows, o vigia mede a memória privada de cada conta. Os
+janela do `iniciar.bat` desliga as contas e o túnel.
+
+**Atualização automática:** o `iniciar.bat` roda o `pokegrid.ps1`, que mantém o servidor no ar (se ele cair, volta
+em 5 s). A cada 15 min o script olha o Release `remoto-pc`, que o GitHub Actions publica a cada push na
+`vps-remoto`. Se houver versão nova, ele pede para o servidor desligar (o histórico é gravado), troca o programa e
+a página e liga de novo. O `pokegrid.conf` e a pasta `dados\` (logins) não mudam. A versão instalada fica no
+`versao.txt`. No Windows, o vigia mede a memória privada de cada conta. Os
 tetos padrão são 1200 MB por conta e 4800 MB no total, e mudam no `pokegrid.conf`.
 
 ## Memória (para caber em ~4–5 GB)

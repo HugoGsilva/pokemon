@@ -122,8 +122,22 @@ async fn wait_signal() {
     };
     #[cfg(not(any(unix, windows)))]
     let term = std::future::pending::<()>();
+    // No PC, o iniciador (pokegrid.ps1) pede para desligar antes de atualizar criando o arquivo "parar"
+    #[cfg(windows)]
+    let stop_file = async {
+        let path = config::exe_dir().join("parar");
+        loop {
+            tokio::time::sleep(std::time::Duration::from_secs(2)).await;
+            if path.exists() {
+                break;
+            }
+        }
+    };
+    #[cfg(not(windows))]
+    let stop_file = std::future::pending::<()>();
     tokio::select! {
         _ = ctrl_c => {}
         _ = term => {}
+        _ = stop_file => {}
     }
 }
