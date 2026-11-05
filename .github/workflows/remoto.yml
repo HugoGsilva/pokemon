@@ -1,0 +1,144 @@
+# PokeGrid Remoto: testa o servidor no Linux (imagem da VPS) e no Windows (contas no PC), monta o pacote do PC
+# e publica em Releases (remoto-pc). Com "e2e" (rodar à mão), testa também pelo túnel da VPS.
+name: PokeGrid Remoto
+
+on:
+  push:
+    branches: [vps-remoto]
+    paths:
+      - "server/**"
+      - "src/**"
+      - "src-tauri/src/domain/**"
+      - "remote.html"
+      - "package.json"
+      - "package-lock.json"
+      - "vite.config.ts"
+      - ".github/workflows/remoto.yml"
+  workflow_dispatch:
+    inputs:
+      e2e:
+        description: "Testar pelo túnel da VPS (https://jogo.hugogsilva.dev)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: remoto-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # A mesma versão da imagem do túnel na VPS (jpillora/chisel)
+  CHISEL_VERSION: "1.12.0"
+  CARGO_TERM_COLOR: always
+
+jobs:
+  linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: server
+      - name: Testes
+        working-directory: server
+        run: cargo test --locked
+
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: server
+
+      - name: Página
+        run: |
+          npm ci --no-audit --no-fund
+          npx tsc --noEmit
+          npx vite build
+
+      - name: Servidor
+        working-directory: server
+        run: |
+          cargo test --locked --release
+          cargo build --locked --release
+
+      - name: Pacote
+        shell: pwsh
+        run: |
+          $out = "PokeGridRemoto"
+          New-Item -ItemType Directory -Force $out | Out-Null
+          Copy-Item server/target/release/pokegrid-server.exe $out/
+          Copy-Item -Recurse dist $out/web
+          Copy-Item server/windows/iniciar.bat, server/windows/pokegrid.conf.example $out/
+          Invoke-WebRequest "https://github.com/jpillora/chisel/releases/download/v$env:CHISEL_VERSION/chisel_$($env:CHISEL_VERSION)_windows_amd64.zip" -OutFile chisel.zip
+          Expand-Archive chisel.zip -DestinationPath chisel-zip -Force
+          Get-ChildItem chisel-zip -Recurse -Filter chisel*.exe | Select-Object -First 1 | Copy-Item -Destination "$out/chisel.exe"
+          if (-not (Test-Path "$out/chisel.exe")) { throw "chisel.exe não veio no zip" }
+          Compress-Archive -Path "$out/*" -DestinationPath PokeGridRemoto-PC.zip -Force
+          Get-ChildItem $out | Format-Table Name, Length
+
+      - name: Teste no Windows (2 contas, Chrome headless)
+        shell: pwsh
+        run: |
+          $env:PG_NO_AUTH = "1"
+          $env:PG_ACCOUNTS = "2"
+          $env:PG_GAME_URL = "https://example.com"
+          $env:PG_DATA = "$env:RUNNER_TEMP\pgdata"
+          $p = Start-Process -FilePath PokeGridRemoto\pokegrid-server.exe -PassThru -NoNewWindow -RedirectStandardError server.log
+          try {
+            ./server/windows/smoke.ps1 -Accounts 2
+          } finally {
+            Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue
+            Get-Content server.log
+          }
+
+      - name: Teste pelo túnel da VPS
+        if: ${{ inputs.e2e }}
+        shell: pwsh
+        env:
+          PG_TUNNEL_AUTH: ${{ secrets.TUNNEL_AUTH }}
+        run: |
+          $password = [Guid]::NewGuid().ToString("N")
+          $env:PG_PASSWORD = $password
+          $env:PG_ACCOUNTS = "2"
+          $env:PG_GAME_URL = "https://example.com"
+          $env:PG_DATA = "$env:RUNNER_TEMP\pgdata-e2e"
+          $env:PG_BIND = "127.0.0.1:8081"
+          $env:PG_TUNNEL_URL = "https://tunel.hugogsilva.dev"
+          $p = Start-Process -FilePath PokeGridRemoto\pokegrid-server.exe -PassThru -NoNewWindow -RedirectStandardError e2e.log
+          try {
+            ./server/windows/smoke.ps1 -Base https://jogo.hugogsilva.dev -Password $password -Accounts 2 -TimeoutSec 150
+          } finally {
+            Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue
+            Get-Content e2e.log
+          }
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: PokeGridRemoto-PC
+          path: PokeGridRemoto-PC.zip
+
+  release:
+    needs: [linux, windows]
+    if: ${{ github.event_name == 'push' || inputs.e2e }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: PokeGridRemoto-PC
+      - name: Publicar em Releases (remoto-pc)
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          gh release delete remoto-pc --yes --cleanup-tag || true
+          gh release create remoto-pc PokeGridRemoto-PC.zip --prerelease --target "${{ github.sha }}" \
+            --title "PokeGrid Remoto (PC)" \
+            --notes "Contas rodando no PC, acompanhadas por https://jogo.hugogsilva.dev. Ver server/README.md (Rodar no PC). Build de ${{ github.sha }}."

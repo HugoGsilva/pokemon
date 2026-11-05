@@ -1,7 +1,7 @@
 [package]
 name = "pokegrid-server"
 version = "1.0.0"
-description = "PokeGrid Remoto: as 4 contas num Chromium headless na VPS, vistas e controladas pelo navegador"
+description = "PokeGrid Remoto: as 4 contas num Chromium headless (VPS ou PC), vistas e controladas pelo navegador"
 authors = ["Hugo"]
 edition = "2021"
 
@@ -20,6 +20,17 @@ bytes = "1"
 getrandom = "0.3"
 # Catálogo público do jogo (preços de NPC e nomes das hunts)
 ureq = "2"
+
+# Windows (contas rodando no PC): RAM da árvore de processos e um job que fecha os navegadores junto com o servidor
+[target.'cfg(windows)'.dependencies]
+windows-sys = { version = "0.61", features = [
+    "Win32_Foundation",
+    "Win32_Security",
+    "Win32_System_Diagnostics_ToolHelp",
+    "Win32_System_JobObjects",
+    "Win32_System_ProcessStatus",
+    "Win32_System_Threading",
+] }
 
 [profile.release]
 opt-level = 3

@@ -8,3 +8,4 @@ src-tauri/gen
 Thumbs.db
 server/target
 server/pokegrid.conf
+server/windows/pokegrid.conf

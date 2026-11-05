@@ -562,6 +562,7 @@ dependencies = [
  "tokio-tungstenite 0.26.2",
  "tower-http",
  "ureq",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]

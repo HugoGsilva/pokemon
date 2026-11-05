@@ -186,15 +186,17 @@ impl<'a> Page<'a> {
         let chrome = chrome::launch(cfg, slot).await?;
         let (cdp, events) = Cdp::connect(&chrome.ws_url).await?;
 
-        // Sem "HeadlessChrome" no user agent: para o jogo é um Chrome comum no Linux
+        // Sem "HeadlessChrome" no user agent: para o jogo é um Chrome comum (no Linux da VPS ou no Windows do PC)
         let version = cdp.call(None, "Browser.getVersion", json!({})).await?;
         let product = version["product"].as_str().unwrap_or("Chrome/0").to_string();
         let full = product.split('/').nth(1).unwrap_or("0").to_string();
         let major = full.split('.').next().unwrap_or("0").to_string();
+        let (platform, nav_platform, platform_version) =
+            if cfg!(windows) { ("Windows", "Win32", "10.0.0") } else { ("Linux", "Linux x86_64", "") };
         let ua = json!({
             "userAgent": version["userAgent"].as_str().unwrap_or_default().replace("HeadlessChrome", "Chrome"),
             "acceptLanguage": "pt-BR,pt;q=0.9,en;q=0.8",
-            "platform": "Linux x86_64",
+            "platform": nav_platform,
             "userAgentMetadata": {
                 "brands": [
                     { "brand": "Chromium", "version": major },
@@ -205,8 +207,8 @@ impl<'a> Page<'a> {
                     { "brand": "Not.A/Brand", "version": "99.0.0.0" }
                 ],
                 "fullVersion": full,
-                "platform": "Linux",
-                "platformVersion": "",
+                "platform": platform,
+                "platformVersion": platform_version,
                 "architecture": "x86",
                 "model": "",
                 "mobile": false

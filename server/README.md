@@ -1,7 +1,12 @@
 # PokeGrid Remoto (VPS)
 
-As 4 contas rodam 24/7 num Chromium headless na VPS. Pelo seu domínio você vê a tela de cada uma, clica e digita
-nelas (mouse, toque e teclado), e tem o painel do Modo Eco. O PC pode ficar desligado.
+As 4 contas rodam 24/7 num Chromium headless. Pelo seu domínio você vê a tela de cada uma, clica e digita
+nelas (mouse, toque e teclado), e tem o painel do Modo Eco. Dá para rodar de dois jeitos:
+
+- **Na VPS** (abaixo): o PC pode ficar desligado. Só funciona se o site do jogo aceitar o IP da VPS. O Cloudflare
+  do idleworld.online bloqueia o IP da nossa VPS ("Sorry, you have been blocked"), então hoje usamos o outro jeito.
+- **No PC, com túnel pela VPS** ([Rodar no PC](#rodar-no-pc-túnel-pela-vps)): as contas rodam no seu PC, com o
+  IP de casa, e a VPS só leva o domínio até ele.
 
 ```
 VPS (Docker)
@@ -62,6 +67,37 @@ Para atualizar: `git pull` e rode o mesmo `up -d --build`. O login das contas e 
 - **Recarregar:** dá F5 na conta selecionada, lá na VPS.
 - O selo de cada conta mostra a RAM dela. Passe o mouse para ver as recargas, os reinícios e o último motivo do
   vigia.
+
+## Rodar no PC (túnel pela VPS)
+
+```
+Navegador ──https──▶ VPS (Traefik do Dokploy) ──▶ pokegrid-tunel (chisel) ══túnel══▶ PC
+                     jogo.hugogsilva.dev                                     pokegrid-server.exe
+                                                                             + Chrome headless (4 contas)
+```
+
+O PC abre a conexão com a VPS (`https://tunel.hugogsilva.dev`), então não precisa abrir porta no roteador. O
+jogo vê o IP de casa. A VPS só repassa a página e não guarda nada.
+
+**Na VPS (Dokploy):** projeto `pokegrid`, app `pokegrid-tunel`, que roda a imagem `jpillora/chisel:1.12.0` com
+`server --reverse --port 8000`. A variável `AUTH=usuario:senha` fica na aba Environment. Os domínios são
+`tunel.hugogsilva.dev` na porta 8000 e `jogo.hugogsilva.dev` na porta 8080. O app `pokegrid`, que roda o
+Chromium na própria VPS, fica parado enquanto o IP estiver bloqueado.
+
+**No PC:**
+
+1. Baixe o `PokeGridRemoto-PC.zip` em Releases (`remoto-pc`) e extraia numa pasta, por exemplo
+   `C:\PokeGridRemoto`. Ele traz o servidor, a página, o `chisel.exe` e o `iniciar.bat`. O GitHub Actions
+   compila e testa o pacote a cada push.
+2. Copie o `pokegrid.conf.example` para `pokegrid.conf` e preencha a senha da página (`PG_PASSWORD`), os nomes e
+   o `PG_TUNNEL_AUTH`, que é o `AUTH` do `pokegrid-tunel` no Dokploy.
+3. Feche o app PokeGrid. A mesma conta aberta nos dois lugares derruba a outra.
+4. Rode o `iniciar.bat`. Abra `http://localhost:8080` no PC, ou `https://jogo.hugogsilva.dev` de qualquer lugar,
+   e faça o login de cada conta uma vez. Os perfis ficam em `dados\`.
+
+O servidor usa o Chrome instalado, ou o Edge se não houver Chrome, em modo headless e sem placa de vídeo. Fechar a
+janela do `iniciar.bat` desliga as contas e o túnel. No Windows, o vigia mede a memória privada de cada conta. Os
+tetos padrão são 1200 MB por conta e 4800 MB no total, e mudam no `pokegrid.conf`.
 
 ## Memória (para caber em ~4–5 GB)
 
@@ -128,7 +164,11 @@ staff que não há problema. O limite de 4 contas por jogador continua valendo (
 | `PG_MEM_ACCOUNT_MB` | `900` | Teto por conta |
 | `PG_MEM_TOTAL_MB` | `4300` | Teto das contas somadas |
 | `PG_JS_HEAP_MB` | `768` | Heap de JS por página |
-| `PG_CHROME` | automático | Caminho do Chromium (fora do Docker) |
+| `PG_CHROME` | automático | Caminho do Chromium (fora do Docker; no Windows procura Chrome e Edge) |
+| `PG_TUNNEL_URL` | — | No PC: servidor do túnel (`https://tunel.hugogsilva.dev`) |
+| `PG_TUNNEL_AUTH` | — | No PC: `usuario:senha` do túnel (o `AUTH` do `pokegrid-tunel`) |
+| `PG_TUNNEL_REMOTE` | `0.0.0.0:8080` | Porta aberta do lado da VPS |
+| `PG_CONF` | `pokegrid.conf` ao lado do executável | Arquivo de configuração (vale para o que não estiver no ambiente) |
 | `PG_NO_AUTH` | — | `1` desliga a senha (só para teste local, nunca na internet) |
 
 ## Problemas comuns
@@ -137,5 +177,7 @@ staff que não há problema. O limite de 4 contas por jogador continua valendo (
 - **Conta presa em "reiniciando…":** veja `docker compose ... logs pokegrid`. O motivo também aparece no selo.
 - **Captcha ou bloqueio na tela de login:** pode ser o IP de datacenter. Resolva pela própria tela (clique e
   digite), ou fale com a staff.
+- **`jogo.hugogsilva.dev` dá "Bad Gateway":** o PC não está conectado ao túnel. Confira se a janela do
+  `iniciar.bat` está aberta e mostra `[túnel] ... Connected`, e se o `PG_TUNNEL_AUTH` bate com o `AUTH` do Dokploy.
 - **Certificado não sai:** confira se o DNS do domínio já aponta para a VPS e se as portas 80/443 estão abertas
   no firewall.

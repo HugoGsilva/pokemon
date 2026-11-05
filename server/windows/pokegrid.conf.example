@@ -1,0 +1,20 @@
+# PokeGrid Remoto no PC. Copie para pokegrid.conf (nesta mesma pasta) e preencha.
+# Nunca mande este arquivo para ninguém: ele tem as senhas.
+
+# Login da página (usuário pokegrid). Mínimo de 12 caracteres
+PG_PASSWORD=
+
+# Nomes na página e no painel, separados por vírgula
+PG_NAMES=Conta 1,Conta 2,Conta 3,Conta 4
+
+# Túnel até a VPS: abre o PokeGrid em https://jogo.hugogsilva.dev
+# PG_TUNNEL_AUTH é o AUTH do app pokegrid-tunel no Dokploy (aba Environment), no formato usuario:senha.
+# Sem estas duas linhas, só dá para abrir em http://localhost:8080 neste PC
+PG_TUNNEL_URL=https://tunel.hugogsilva.dev
+PG_TUNNEL_AUTH=
+
+# Opcionais (padrões do PC):
+# PG_ACCOUNTS=4
+# PG_MEM_ACCOUNT_MB=1200
+# PG_MEM_TOTAL_MB=4800
+# PG_CHROME=C:\Program Files\Google\Chrome\Application\chrome.exe
