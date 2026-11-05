@@ -149,12 +149,15 @@ pub async fn launch(cfg: &Config, slot: u8) -> Result<Chrome, String> {
     {
         cmd.arg("--no-sandbox");
     }
+    // Na VPS não há placa: desenhar em software evita o processo de GPU. No PC a placa existe e gasta
+    // menos CPU do que rasterizar no processador. PG_DISABLE_GPU=1 força o software também no PC.
+    if !cfg!(windows) || std::env::var("PG_DISABLE_GPU").ok().as_deref() == Some("1") {
+        cmd.arg("--disable-gpu");
+        cmd.arg("--disable-dev-shm-usage");
+    }
     cmd.args([
             "--no-first-run",
             "--no-default-browser-check",
-            // Sem placa de vídeo na VPS: tudo em software, sem o processo de GPU segurando texturas
-            "--disable-gpu",
-            "--disable-dev-shm-usage",
             "--disable-extensions",
             "--disable-component-update",
             "--disable-sync",
@@ -165,6 +168,10 @@ pub async fn launch(cfg: &Config, slot: u8) -> Result<Chrome, String> {
             "--metrics-recording-only",
             "--no-pings",
             "--mute-audio",
+            // Serviços do navegador que não servem o jogo: rede de atualização, extensões de fundo, cache antigo
+            "--disable-background-networking",
+            "--disable-component-extensions-with-background-pages",
+            "--aggressive-cache-discard",
             "--password-store=basic",
             "--renderer-process-limit=2",
             // O jogo tem que seguir rodando sem ninguém olhando

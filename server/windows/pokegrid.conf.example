@@ -15,6 +15,9 @@ PG_TUNNEL_AUTH=
 
 # Opcionais (padrões do PC):
 # PG_ACCOUNTS=4
-# PG_MEM_ACCOUNT_MB=1200
-# PG_MEM_TOTAL_MB=4800
+# Recarga sozinha, uma conta por vez, esperando o fim da luta. 0 desliga
+# PG_REFRESH_MIN=120
+# PG_MEM_ACCOUNT_MB=900
+# PG_MEM_TOTAL_MB=3200
+# PG_DISABLE_GPU=1
 # PG_CHROME=C:\Program Files\Google\Chrome\Application\chrome.exe

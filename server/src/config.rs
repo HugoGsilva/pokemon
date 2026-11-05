@@ -27,6 +27,8 @@ pub struct Config {
     pub mem_total_mb: u64,
     /// Limite do heap de JavaScript por página: um vazamento derruba a aba (e o vigia a reabre), não a VPS
     pub js_heap_mb: u64,
+    /// Recarga programada, em minutos: a cada tanto, a conta há mais tempo sem F5 recarrega. 0 desliga
+    pub refresh_min: u64,
     /// Túnel até a VPS (contas rodando no PC): URL do servidor chisel, usuário:senha e a porta aberta lá
     pub tunnel_url: Option<String>,
     pub tunnel_auth: Option<String>,
@@ -118,9 +120,11 @@ impl Config {
             fps_grid: num("PG_FPS", 2.0f64).clamp(0.2, 10.0),
             fps_focus: num("PG_FPS_FOCUS", 5.0f64).clamp(0.2, 15.0),
             jpeg_quality: num("PG_JPEG_QUALITY", 50u32).clamp(20, 90),
-            mem_account_mb: num("PG_MEM_ACCOUNT_MB", if windows { 1200u64 } else { 900 }).max(300),
-            mem_total_mb: num("PG_MEM_TOTAL_MB", if windows { 4800u64 } else { 4300 }).max(600),
+            mem_account_mb: num("PG_MEM_ACCOUNT_MB", 900u64).max(300),
+            mem_total_mb: num("PG_MEM_TOTAL_MB", if windows { 3200u64 } else { 4300 }).max(600),
             js_heap_mb: num("PG_JS_HEAP_MB", 768u64).max(256),
+            // No PC o vazamento chega em 1–2 GB antes do teto: um F5 a cada 2 h segura a RAM. Na VPS o teto basta
+            refresh_min: num("PG_REFRESH_MIN", if windows { 120u64 } else { 0 }),
             tunnel_url,
             tunnel_auth,
             tunnel_remote: var("PG_TUNNEL_REMOTE").unwrap_or_else(|| "0.0.0.0:8080".into()),

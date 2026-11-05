@@ -612,34 +612,126 @@ fn virtual_key(key: &str, code: &str) -> u32 {
     }
 }
 
-/// O vigia de memória: a cada 30 s olha a RAM das contas e manda recarregar a maior que passou do teto
-/// (dela ou da soma). Uma ação por vez, com intervalo, para a conta recarregada voltar ao normal antes
+struct WatchSnap {
+    state: &'static str,
+    mem_mb: Option<u64>,
+    /// Tempo desde a última recarga (ou desde que a conta subiu)
+    age: Duration,
+}
+
+/// Uma recarga por vez. Memória acima do teto vem primeiro; senão, a conta há mais tempo sem F5,
+/// quando `refresh` não é zero. `cooled` é o intervalo desde a recarga anterior. `urgent` não espera a luta.
+fn watch_decision(
+    accounts: &[WatchSnap],
+    mem_account: u64,
+    mem_total: u64,
+    refresh: Duration,
+    cooled: bool,
+) -> Option<(usize, String, bool)> {
+    let mems: Vec<(usize, u64)> = accounts.iter().enumerate().filter_map(|(i, a)| Some((i, a.mem_mb?))).collect();
+    let total: u64 = mems.iter().map(|(_, mb)| mb).sum();
+    if let Some(&(biggest, big_mb)) = mems.iter().max_by_key(|(_, mb)| *mb) {
+        let urgent = total > mem_total + mem_total * 15 / 100;
+        if cooled || urgent {
+            if big_mb > mem_account {
+                return Some((biggest, format!("{} MB, acima do teto de {} MB por conta", big_mb, mem_account), urgent));
+            }
+            if total > mem_total && big_mb > 300 {
+                return Some((
+                    biggest,
+                    format!("contas somando {} MB, acima do teto de {} MB", total, mem_total),
+                    urgent,
+                ));
+            }
+        }
+    }
+    if refresh.is_zero() || !cooled {
+        return None;
+    }
+    let (oldest, _) = accounts
+        .iter()
+        .enumerate()
+        .filter(|(_, a)| a.state == "running" && a.age >= refresh)
+        .max_by_key(|(_, a)| a.age)?;
+    Some((oldest, format!("recarga programada ({} min)", refresh.as_secs() / 60), false))
+}
+
+/// O vigia: a cada 30 s olha a RAM e a idade de cada conta. Recarrega a maior que passou do teto, ou a
+/// que está há mais tempo sem F5. Uma ação por vez, com intervalo, para a conta recarregada assentar
 pub fn spawn_watchdog(cfg: Arc<Config>, accounts: Vec<(mpsc::UnboundedSender<Cmd>, watch::Receiver<Status>)>) {
     const COOLDOWN: Duration = Duration::from_secs(150);
+    let refresh = Duration::from_secs(cfg.refresh_min.saturating_mul(60));
     tokio::spawn(async move {
         let mut last: Option<Instant> = None;
+        let mut since = vec![Instant::now(); accounts.len()];
         let mut tick = tokio::time::interval(MEM_EVERY);
         loop {
             tick.tick().await;
-            let mems: Vec<(usize, u64)> =
-                accounts.iter().enumerate().filter_map(|(i, (_, st))| Some((i, st.borrow().mem_mb?))).collect();
-            let total: u64 = mems.iter().map(|(_, mb)| mb).sum();
-            let Some(&(biggest, big_mb)) = mems.iter().max_by_key(|(_, mb)| *mb) else { continue };
-            // Muito acima do teto somado: não espera o intervalo nem o fim da luta
-            let urgent = total > cfg.mem_total_mb + cfg.mem_total_mb * 15 / 100;
-            if !urgent && last.is_some_and(|t| t.elapsed() < COOLDOWN) {
-                continue;
-            }
-            let reason = if big_mb > cfg.mem_account_mb {
-                format!("{} MB, acima do teto de {} MB por conta", big_mb, cfg.mem_account_mb)
-            } else if total > cfg.mem_total_mb && big_mb > 300 {
-                format!("contas somando {} MB, acima do teto de {} MB", total, cfg.mem_total_mb)
-            } else {
+            let cooled = last.is_none_or(|t| t.elapsed() >= COOLDOWN);
+            let snap: Vec<WatchSnap> = accounts
+                .iter()
+                .enumerate()
+                .map(|(i, (_, st))| {
+                    let s = st.borrow();
+                    WatchSnap { state: s.state, mem_mb: s.mem_mb, age: since[i].elapsed() }
+                })
+                .collect();
+            let Some((i, reason, urgent)) =
+                watch_decision(&snap, cfg.mem_account_mb, cfg.mem_total_mb, refresh, cooled)
+            else {
                 continue;
             };
-            eprintln!("[vigia] conta{}: {}", biggest + 1, reason);
-            let _ = accounts[biggest].0.send(Cmd::Recycle { reason, urgent });
+            eprintln!("[vigia] conta{}: {}", i + 1, reason);
+            let _ = accounts[i].0.send(Cmd::Recycle { reason, urgent });
+            since[i] = Instant::now();
             last = Some(Instant::now());
         }
     });
+}
+
+#[cfg(test)]
+mod watch_tests {
+    use super::*;
+
+    fn snap(state: &'static str, mem: Option<u64>, age_min: u64) -> WatchSnap {
+        WatchSnap { state, mem_mb: mem, age: Duration::from_secs(age_min * 60) }
+    }
+
+    #[test]
+    fn memory_beats_the_timer() {
+        let accounts = [snap("running", Some(1000), 10), snap("running", Some(400), 200)];
+        let (i, reason, urgent) =
+            watch_decision(&accounts, 900, 3200, Duration::from_secs(120 * 60), true).unwrap();
+        assert_eq!(i, 0);
+        assert!(!urgent);
+        assert!(reason.contains("900"));
+    }
+
+    #[test]
+    fn urgent_skips_the_cooldown() {
+        let accounts = [snap("running", Some(2100), 1), snap("running", Some(2000), 1)];
+        let (_, _, urgent) = watch_decision(&accounts, 900, 3200, Duration::ZERO, false).unwrap();
+        assert!(urgent);
+    }
+
+    #[test]
+    fn timer_picks_the_oldest_running_account() {
+        let accounts = [
+            snap("running", Some(400), 30),
+            snap("restarting", Some(400), 400),
+            snap("running", Some(500), 180),
+        ];
+        let (i, reason, urgent) =
+            watch_decision(&accounts, 900, 3200, Duration::from_secs(120 * 60), true).unwrap();
+        assert_eq!(i, 2);
+        assert!(!urgent);
+        assert!(reason.contains("120"));
+    }
+
+    #[test]
+    fn timer_waits_out_the_cooldown_and_can_be_off() {
+        let accounts = [snap("running", Some(400), 500)];
+        assert!(watch_decision(&accounts, 900, 3200, Duration::from_secs(120 * 60), false).is_none());
+        assert!(watch_decision(&accounts, 900, 3200, Duration::ZERO, true).is_none());
+    }
 }

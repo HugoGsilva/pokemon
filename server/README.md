@@ -96,15 +96,17 @@ Chromium na própria VPS, fica parado enquanto o IP estiver bloqueado.
 4. Rode o `iniciar.bat`. Abra `http://localhost:8080` no PC, ou `https://jogo.hugogsilva.dev` de qualquer lugar,
    e faça o login de cada conta uma vez. Os perfis ficam em `dados\`.
 
-O servidor usa o Chrome instalado, ou o Edge se não houver Chrome, em modo headless e sem placa de vídeo. Fechar a
-janela do `iniciar.bat` desliga as contas e o túnel.
+O servidor usa o Chrome instalado, ou o Edge se não houver Chrome, em modo headless. No PC o desenho vai para a
+placa de vídeo (menos CPU); `PG_DISABLE_GPU=1` força o desenho em software. Fechar a janela do `iniciar.bat`
+desliga as contas e o túnel.
 
 **Atualização automática:** o `iniciar.bat` roda o `pokegrid.ps1`, que mantém o servidor no ar (se ele cair, volta
 em 5 s). A cada 15 min o script olha o Release `remoto-pc`, que o GitHub Actions publica a cada push na
 `vps-remoto`. Se houver versão nova, ele pede para o servidor desligar (o histórico é gravado), troca o programa e
 a página e liga de novo. O `pokegrid.conf` e a pasta `dados\` (logins) não mudam. A versão instalada fica no
-`versao.txt`. No Windows, o vigia mede a memória privada de cada conta. Os
-tetos padrão são 1200 MB por conta e 4800 MB no total, e mudam no `pokegrid.conf`.
+`versao.txt`. No Windows, o vigia mede a memória privada de cada conta. A cada 2 h recarrega a conta há mais
+tempo sem F5 (uma por vez, esperando o fim da luta). Os tetos padrão são 900 MB por conta e 3200 MB no total.
+Tudo isso muda no `pokegrid.conf` (`PG_REFRESH_MIN=0` desliga a recarga por tempo).
 
 ## Memória (para caber em ~4–5 GB)
 
@@ -113,9 +115,10 @@ Medição no PC (WebView2): logo depois do F5, a página de uma conta ocupa cerc
 
 | Camada | O que faz |
 |---|---|
-| `--disable-gpu`, tela 1280×720, escala 1 | Sem processo de GPU guardando texturas, desenho em software |
-| Chromium enxuto | Sem extensões, tradução, sync, back-forward cache e afins; cache de disco de 64 MB |
-| Vigia de memória | A cada 30 s lê a RAM (PSS) de cada conta. Recarrega a maior que passou de `PG_MEM_ACCOUNT_MB` (900), ou a maior quando a soma passa de `PG_MEM_TOTAL_MB` (4300). Uma recarga por vez, no máximo a cada 2,5 min |
+| GPU | Na VPS, `--disable-gpu` (não há placa). No PC a placa desenha, e o processador fica livre. `PG_DISABLE_GPU=1` volta ao software |
+| Chromium enxuto | Sem extensões, tradução, sync, rede de atualização e back-forward cache; cache de disco de 64 MB, descartado com agressividade |
+| Recarga programada | No PC, a cada `PG_REFRESH_MIN` (120) a conta há mais tempo sem F5 recarrega. Uma por vez, no máximo a cada 2,5 min. `0` desliga |
+| Vigia de memória | A cada 30 s lê a RAM de cada conta. Recarrega a maior que passou de `PG_MEM_ACCOUNT_MB` (900 no PC, 900 na VPS), ou a maior quando a soma passa do teto (3200 no PC, 4300 na VPS) |
 | Hora certa | Numa hunt, espera o próximo abate (fim da luta) por até 90 s antes de recarregar. Se a soma passar 15 % do teto, recarrega na hora |
 | Escalada | Recarregou e em menos de 10 min passou do teto de novo: o vazamento não é da página, e o vigia reinicia o Chromium daquela conta (o perfil e o login continuam) |
 | `PG_JS_HEAP_MB` (768) | Limite do heap de JS por página: um vazamento rápido derruba só a aba, e o servidor a reabre |
@@ -168,9 +171,11 @@ staff que não há problema. O limite de 4 contas por jogador continua valendo (
 | `PG_VIEWPORT` | `1280x720` | Tamanho da página do jogo |
 | `PG_FPS` / `PG_FPS_FOCUS` | `2` / `5` | Quadros por segundo na grade e com a conta ampliada |
 | `PG_JPEG_QUALITY` | `50` | Qualidade do JPEG (a conta ampliada usa +10) |
-| `PG_MEM_ACCOUNT_MB` | `900` | Teto por conta |
-| `PG_MEM_TOTAL_MB` | `4300` | Teto das contas somadas |
+| `PG_MEM_ACCOUNT_MB` | `900` | Teto por conta (no PC o padrão também é 900) |
+| `PG_MEM_TOTAL_MB` | `4300` | Teto das contas somadas (no PC, 3200) |
+| `PG_REFRESH_MIN` | `120` no PC, `0` na VPS | Minutos entre recargas automáticas. `0` desliga |
 | `PG_JS_HEAP_MB` | `768` | Heap de JS por página |
+| `PG_DISABLE_GPU` | ligado na VPS | `1` desenha em software também no PC |
 | `PG_CHROME` | automático | Caminho do Chromium (fora do Docker; no Windows procura Chrome e Edge) |
 | `PG_TUNNEL_URL` | — | No PC: servidor do túnel (`https://tunel.hugogsilva.dev`) |
 | `PG_TUNNEL_AUTH` | — | No PC: `usuario:senha` do túnel (o `AUTH` do `pokegrid-tunel`) |
