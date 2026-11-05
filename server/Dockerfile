@@ -22,7 +22,7 @@ RUN cd server && cargo build --release --locked
 #    atualizações de segurança do Debian a cada rebuild)
 FROM debian:bookworm-slim
 RUN apt-get update \
- && apt-get install -y --no-install-recommends chromium-headless-shell ca-certificates fonts-liberation fonts-noto-color-emoji \
+ && apt-get install -y --no-install-recommends chromium-headless-shell ca-certificates fonts-liberation fonts-noto-color-emoji tini \
  && rm -rf /var/lib/apt/lists/* \
  && bin="$(command -v chromium-headless-shell || dpkg -L chromium-headless-shell | grep -E 'headless[-_]shell$' | head -n1)" \
  && if [ ! -f "$bin" ]; then echo "binário do chromium-headless-shell não encontrado" >&2; dpkg -L chromium-headless-shell >&2; exit 1; fi \
@@ -36,4 +36,6 @@ USER pokegrid
 ENV PG_DATA=/data PG_WEB=/app/web PG_BIND=0.0.0.0:8080 PG_CHROME=/usr/local/bin/pg-chrome
 VOLUME /data
 EXPOSE 8080
+# tini como PID 1 recolhe os processos órfãos do Chromium (no Swarm/Dokploy não existe o init: true do compose)
+ENTRYPOINT ["/usr/bin/tini", "--"]
 CMD ["pokegrid-server"]
